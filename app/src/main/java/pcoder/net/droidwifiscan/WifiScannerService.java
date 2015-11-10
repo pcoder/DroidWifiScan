@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
 import android.os.IBinder;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import java.util.List;
@@ -21,6 +22,7 @@ public class WifiScannerService extends Service {
     private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
     private ScheduledFuture<?> scheduledFutureAction;
     private ScheduledExecutorService scheduledExecutorService;
+    private WifiData wifiData;
 
     private int initialDelay = 500;
     private int period = 5000;
@@ -31,6 +33,8 @@ public class WifiScannerService extends Service {
 
     @Override
     public void onCreate(){
+
+        wifiData = new WifiData();
         // Get the android's wifi manager which will be used in the code
         // to scan the access points
         wifiManager = (WifiManager) this.getApplicationContext().getSystemService(Context.WIFI_SERVICE);
@@ -67,11 +71,21 @@ public class WifiScannerService extends Service {
             if (wifiManager.isWifiEnabled()) {
                 // get the scan results of the available networks
                 List<ScanResult> scanResults = wifiManager.getScanResults();
-                Log.d("WifiScanThread", "Found " + scanResults.size() + " networks.");
+                /*Log.d("WifiScanThread", "Found " + scanResults.size() + " networks.");
                 int i=0;
                 for(ScanResult s : scanResults){
                     Log.d("WifiScanThread", "     " + (++i) + ". " + s.SSID + " " + s.level + " " + s.capabilities);
-                }
+                }*/
+
+                // save the scanResults
+                wifiData.addAccessPoints(scanResults);
+
+                // send data to MyActivity
+                Intent intent = new Intent("DROID_WIFI_SCANNER");
+                intent.putExtra(Constants.WIFI_DATA, wifiData);
+                LocalBroadcastManager.getInstance(WifiScannerService.this).sendBroadcast(intent);
+            }else{
+                Log.d("WifiScanThread", "Wifi seems to be deactivated. Please activate it to see the results.");
             }
         }
     }

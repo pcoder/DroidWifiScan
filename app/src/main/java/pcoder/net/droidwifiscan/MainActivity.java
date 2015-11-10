@@ -1,6 +1,10 @@
 package pcoder.net.droidwifiscan;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
@@ -13,9 +17,18 @@ import android.view.ViewGroup;
 
 public class MainActivity extends ActionBarActivity {
 
+    private WifiData wifiData;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        wifiData = null;
+
+        // set receiver
+        WifiDataReceiver mReceiver = new WifiDataReceiver();
+        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter("DROID_WIFI_SCANNER"));
+
         setContentView(R.layout.activity_main);
         if (savedInstanceState == null) {
             getSupportFragmentManager().beginTransaction()
@@ -67,4 +80,27 @@ public class MainActivity extends ActionBarActivity {
             return rootView;
         }
     }
+
+    /**
+     * A Broadcast receiver to listen to the data about the access points sent
+     * by the WifiScannerService.
+     *
+     */
+    public class WifiDataReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            WifiData data = (WifiData) intent.getParcelableExtra(Constants.WIFI_DATA);
+
+            if (data != null) {
+                wifiData = data;
+
+                // TODO use this data to plot the graph
+                // and save using the REST API
+                wifiData.printAll();
+
+            }
+        }
+    }
+
 }

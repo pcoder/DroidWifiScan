@@ -7,9 +7,12 @@ package pcoder.net.droidwifiscan;
 import android.net.wifi.ScanResult;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.util.Log;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -24,6 +27,7 @@ import java.util.List;
 public class WifiData implements Parcelable{
 
     List<WifiAccessPoint> accessPoints;
+    long timestamp;
 
     public WifiData(){
         accessPoints = new ArrayList<WifiAccessPoint>();
@@ -34,12 +38,14 @@ public class WifiData implements Parcelable{
         for (ScanResult result : results) {
             accessPoints.add(new WifiAccessPoint(result));
         }
+        timestamp = System.currentTimeMillis();
         Collections.sort(accessPoints);
     }
 
 
     public WifiData(Parcel in) {
         in.readTypedList(accessPoints, WifiData.CREATOR);
+        timestamp = in.readLong();
     }
 
     public static final Parcelable.Creator<WifiAccessPoint> CREATOR = new Parcelable.Creator<WifiAccessPoint>() {
@@ -60,5 +66,20 @@ public class WifiData implements Parcelable{
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeTypedList(accessPoints);
+        dest.writeLong(timestamp);
+    }
+
+    @Override
+    public String toString() {
+        SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
+        Date resultdate = new Date(timestamp);
+        return "There are " + accessPoints.size() + " access points at " + sdf.format(resultdate);
+    }
+
+    public void printAll(){
+        Log.d("DroidWifiScanner", this.toString());
+        int i=0;
+        for(WifiAccessPoint a : accessPoints)
+            Log.d("DroidWifiScanner", "     " + (++i) + ". " + a.toString());
     }
 }

@@ -10,7 +10,6 @@ import android.os.Parcelable;
 public class WifiAccessPoint implements Parcelable, Comparable<WifiAccessPoint>{
     private String BSSID;
     private String SSID;
-    private long timestamp;
     public int level;
     private String capabilities;
     private int frequency;
@@ -22,7 +21,6 @@ public class WifiAccessPoint implements Parcelable, Comparable<WifiAccessPoint>{
         capabilities = result.capabilities;
         frequency = result.frequency;
         level = result.level;
-        timestamp = System.currentTimeMillis();
     }
 
     public WifiAccessPoint(Parcel in) {
@@ -31,7 +29,6 @@ public class WifiAccessPoint implements Parcelable, Comparable<WifiAccessPoint>{
         capabilities = in.readString();
         frequency = in.readInt();
         level = in.readInt();
-        timestamp = in.readLong();
     }
 
     @Override
@@ -46,7 +43,6 @@ public class WifiAccessPoint implements Parcelable, Comparable<WifiAccessPoint>{
         dest.writeString(capabilities);
         dest.writeInt(frequency);
         dest.writeInt(level);
-        dest.writeLong(timestamp);
     }
 
     @Override
