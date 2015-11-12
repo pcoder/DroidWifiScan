@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.Set;
 import java.util.SimpleTimeZone;
 
 import com.androidplot.Plot;
@@ -54,6 +55,7 @@ public class MainActivity extends ActionBarActivity {
     private long startTime;
     private int xstep;
     int color_counter = 0;
+    int startx = 0;
     String[] colorValues = new String[] {
             "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000",
             "800000", "008000", "000080", "808000", "800080", "008080", "808080",
@@ -260,7 +262,9 @@ public class MainActivity extends ActionBarActivity {
                 SimpleXYSeries xySeries = null;
                 List<Number> dataList = null;
                 int signalValue= 0;
-                for(String bssid : wifiData.getAllBSSIDs()) {
+                Set<String> allBSSIDS = wifiData.getAllBSSIDs();
+                dynamicPlot.setTitle("Wifi Signal Plot (" + allBSSIDS.size() + " aps)");
+                for(String bssid : allBSSIDS) {
 
                     signalValue = wifiData.getGetValueForBSSID(bssid);
 
@@ -276,8 +280,7 @@ public class MainActivity extends ActionBarActivity {
                         dataList.add(xstep * 5);
                         dataList.add(signalValue);
                         xySeries =  new SimpleXYSeries("t");
-                        int c = (int)Long.parseLong("FF" + colorValues[color_counter++], 16);
-                        //Log.d("test", "c = " + c);
+                        int c = (int)Long.parseLong("FF" + colorValues[(color_counter++)%56], 16);
                         dynamicPlot.addSeries(xySeries, new LineAndPointFormatter(c, c, Color.TRANSPARENT, null));
                         mapPlotData.put(bssid, new OurPlotData(xySeries, dataList));
                     }
@@ -287,10 +290,13 @@ public class MainActivity extends ActionBarActivity {
                         xySeries.removeFirst();
                         dataList.remove(0);
                         dataList.remove(0);
-                        dynamicPlot.setDomainBoundaries(0 + xstep * 2 , 30 + xstep * 2, BoundaryMode.FIXED);
                     }
 
                     xySeries.addLast(xstep * 5, signalValue);
+                }
+                if((xstep * 5) >= 30){
+                    startx+=5;
+                    dynamicPlot.setDomainBoundaries(startx, 30 + startx, BoundaryMode.FIXED);
                 }
                 xstep++;
                 dynamicPlot.redraw();
