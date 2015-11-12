@@ -15,6 +15,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A Class to represent the type of data that is going to
@@ -30,7 +32,8 @@ public class WifiData implements Parcelable{
     List<WifiAccessPoint> accessPoints;
     long timestamp;
     int counter;
-    HashMap<String, Number> values = new HashMap<String, Number>();
+    HashMap<String, WifiAccessPoint> accessPointMap = new HashMap<String, WifiAccessPoint>();
+    HashMap<String, Integer> bssid_value_map = new HashMap<String, Integer>();
 
     public WifiData(){
         accessPoints = new ArrayList<WifiAccessPoint>();
@@ -40,16 +43,25 @@ public class WifiData implements Parcelable{
     public void addAccessPoints(List<ScanResult> results) {
         accessPoints.clear();
         for (ScanResult result : results) {
-            accessPoints.add(new WifiAccessPoint(result));
+            WifiAccessPoint w = new WifiAccessPoint(result);
+            accessPoints.add(w);
+            accessPointMap.put(result.BSSID, w);
+            bssid_value_map.put(result.BSSID, result.level);
         }
         timestamp = System.currentTimeMillis();
         Collections.sort(accessPoints);
     }
 
-
     public WifiData(Parcel in) {
         in.readTypedList(accessPoints, WifiData.CREATOR);
         timestamp = in.readLong();
+
+        int size = in.readInt();
+        for(int i = 0; i < size; i++){
+            String key = in.readString();
+            Integer value = (Integer)in.readInt();
+            bssid_value_map.put(key,value);
+        }
     }
 
     public static final Parcelable.Creator<WifiAccessPoint> CREATOR = new Parcelable.Creator<WifiAccessPoint>() {
@@ -62,6 +74,9 @@ public class WifiData implements Parcelable{
         }
     };
 
+
+
+
     @Override
     public int describeContents() {
         return 0;
@@ -71,6 +86,11 @@ public class WifiData implements Parcelable{
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeTypedList(accessPoints);
         dest.writeLong(timestamp);
+        dest.writeInt(bssid_value_map.size());
+        for(Map.Entry<String,Integer> entry : bssid_value_map.entrySet()){
+            dest.writeString(entry.getKey());
+            dest.writeInt((int) entry.getValue());
+        }
     }
 
     @Override
@@ -104,7 +124,7 @@ public class WifiData implements Parcelable{
         return ret;
     }
 
-    public HashMap getSignalsAsHash(){
+    /*public HashMap getSignalsAsHash(){
         Number []ret = new Number[1];
         int i=0;
         for(WifiAccessPoint a : accessPoints)
@@ -115,10 +135,15 @@ public class WifiData implements Parcelable{
             }
 
         return null;
-        /*Number []ret = new Number[accessPoints.size()];
-        int i=0;
-        for(WifiAccessPoint a : accessPoints)
-            ret[i++] = a.level;
-        return ret;*/
+
+    }*/
+
+    public Integer getGetValueForBSSID(String bssid){
+
+        return bssid_value_map.get(bssid);
+    }
+
+    public Set<String> getAllBSSIDs(){
+       return bssid_value_map.keySet();
     }
  }

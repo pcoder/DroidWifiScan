@@ -50,6 +50,19 @@ public class MainActivity extends ActionBarActivity {
     private List allDataSeries = null;
     private List dataList = null;
     private List<List<ArrayList>> allDataList = null;
+    private HashMap<String, OurPlotData> mapPlotData;
+    private long startTime;
+    private int xstep;
+    String[] colorValues = new String[] {
+            "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000",
+            "800000", "008000", "000080", "808000", "800080", "008080", "808080",
+            "C00000", "00C000", "0000C0", "C0C000", "C000C0", "00C0C0", "C0C0C0",
+            "400000", "004000", "000040", "404000", "400040", "004040", "404040",
+            "200000", "002000", "000020", "202000", "200020", "002020", "202020",
+            "600000", "006000", "000060", "606000", "600060", "006060", "606060",
+            "A00000", "00A000", "0000A0", "A0A000", "A000A0", "00A0A0", "A0A0A0",
+            "E00000", "00E000", "0000E0", "E0E000", "E000E0", "00E0E0", "E0E0E0",
+    };
 
 
     public MainActivity() {
@@ -58,11 +71,13 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
+        xstep = 0;
         wifiData = null;
         dataList = new ArrayList();
         allDataSeries = new ArrayList();
         allDataList = new ArrayList<List<ArrayList>>();
+        mapPlotData = new HashMap<String, OurPlotData>();
+        startTime = System.currentTimeMillis();
         // set receiver
         WifiDataReceiver mReceiver = new WifiDataReceiver();
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter("DROID_WIFI_SCANNER"));
@@ -83,13 +98,13 @@ public class MainActivity extends ActionBarActivity {
 
         dynamicPlot = (XYPlot) findViewById(R.id.dynamicXYPlot);
 
-        wifiDataSeries = new SimpleXYSeries("Wifi Signal Strength");
-        wifiDataSeries.useImplicitXVals();
+        //wifiDataSeries = new SimpleXYSeries("Wifi Signal Strength");
+        //wifiDataSeries.useImplicitXVals();
 
         dynamicPlot.setRangeBoundaries(-100, -30, BoundaryMode.FIXED);
         dynamicPlot.setDomainBoundaries(0, 30, BoundaryMode.FIXED);
 
-        dynamicPlot.addSeries(wifiDataSeries, new LineAndPointFormatter( Color.RED,Color.GREEN, Color.argb(255,0,0,0), null));
+        //dynamicPlot.addSeries(wifiDataSeries, new LineAndPointFormatter( Color.RED,Color.GREEN, Color.argb(255,0,0,0), null));
         dynamicPlot.setDomainStepValue(5);
         dynamicPlot.setTicksPerRangeLabel(3);
         dynamicPlot.setDomainLabel("Time");
@@ -209,10 +224,10 @@ public class MainActivity extends ActionBarActivity {
 
                 // TODO use this data to plot the graph
                 // and save using the REST API
-                wifiData.printAll();
+                //wifiData.printAll();
 
                 // update instantaneous data:
-                Number[] series1Numbers = wifiData.getSignalsAsArray();
+                /*Number[] series1Numbers = wifiData.getSignalsAsArray();
 
                 for(int i=0; i<series1Numbers.length; i++){
                     ArrayList datal;
@@ -223,7 +238,7 @@ public class MainActivity extends ActionBarActivity {
                         allDataList.add(datal);
                         wifiDataSeriesl =  new SimpleXYSeries("" + i);
                         wifiDataSeriesl.useImplicitXVals();
-                        dynamicPlot.addSeries(wifiDataSeriesl, new LineAndPointFormatter(Color.RED, Color.GREEN, Color.argb(0,0,0,0), null));
+                        dynamicPlot.addSeries(wifiDataSeriesl, new LineAndPointFormatter((int)Math.random(), Color.GREEN, Color.argb(0,0,0,0), null));
                         allDataSeries.add(wifiDataSeriesl);
                     }else{
                         datal = (ArrayList)allDataList.get(i);
@@ -238,8 +253,41 @@ public class MainActivity extends ActionBarActivity {
                         datal.remove(0);
                     }
 
-                    wifiDataSeriesl.addLast(null, series1Numbers[i]);
+                    wifiDataSeriesl.addLast((System.currentTimeMillis() - startTime) /1000, series1Numbers[i]);
+                }*/
+                OurPlotData opd = null;
+                SimpleXYSeries xySeries = null;
+                List<Number> dataList = null;
+                int signalValue= 0;
+                int i = 0;
+                for(String bssid : wifiData.getAllBSSIDs()) {
+
+                    signalValue = wifiData.getGetValueForBSSID(bssid);
+
+                    if ((opd = mapPlotData.get(bssid)) != null){
+                        xySeries = opd.getDataSeries();
+                        dataList = opd.getDataList();
+                        dataList.add(signalValue);
+                    }else{
+                        // create OurPlotData and store it for future references
+                        dataList = new ArrayList();
+                        dataList.add(signalValue);
+                        xySeries =  new SimpleXYSeries("t");
+                        int c = (int)Long.parseLong("FF" + colorValues[i++], 16);
+                        //Log.d("test", "c = " + c);
+                        dynamicPlot.addSeries(xySeries, new LineAndPointFormatter(c, c, Color.TRANSPARENT, null));
+                        mapPlotData.put(bssid, new OurPlotData(xySeries, dataList));
+                    }
+
+                    xySeries.setModel(dataList, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY);
+                    if (dataList.size() > HISTORY_SIZE) {
+                        xySeries.removeFirst();
+                        dataList.remove(0);
+                    }
+
+                    xySeries.addLast(xstep * 5, signalValue);
                 }
+                xstep++;
                 dynamicPlot.redraw();
 
 
@@ -289,13 +337,26 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public void onPause() {
+        super.onPause();
         if(data != null) {
             data.stopThread();
-            super.onPause();
         }else{
             Log.d("test", "There is an error.");
         }
+    }
 
+    @Override
+    protected void onStop() {
+        Log.d("test", "App stopped");
+
+        super.onStop();
+    }
+
+    @Override
+    protected void onDestroy() {
+        Log.d("test", "App destoryed");
+
+        super.onDestroy();
     }
 
 
@@ -303,7 +364,18 @@ public class MainActivity extends ActionBarActivity {
         private SimpleXYSeries dataSeries;
         private List<Number> dataList;
 
-        
+        public OurPlotData(SimpleXYSeries s, List<Number> l){
+            this.dataSeries = s;
+            this.dataList = l;
+        }
+
+        public List<Number> getDataList(){
+            return dataList;
+        }
+
+        public SimpleXYSeries getDataSeries(){
+            return dataSeries;
+        }
     }
 
 
