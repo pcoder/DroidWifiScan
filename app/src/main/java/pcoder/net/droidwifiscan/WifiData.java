@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -28,9 +29,12 @@ public class WifiData implements Parcelable{
 
     List<WifiAccessPoint> accessPoints;
     long timestamp;
+    int counter;
+    HashMap<String, Number> values = new HashMap<String, Number>();
 
     public WifiData(){
         accessPoints = new ArrayList<WifiAccessPoint>();
+        counter = 0;
     }
 
     public void addAccessPoints(List<ScanResult> results) {
@@ -82,4 +86,39 @@ public class WifiData implements Parcelable{
         for(WifiAccessPoint a : accessPoints)
             Log.d("DroidWifiScanner", "     " + (++i) + ". " + a.toString());
     }
-}
+
+    public Number[] getSignalsAsArray(){
+        /*Number []ret = new Number[1];
+        int i=0;
+        for(WifiAccessPoint a : accessPoints)
+            if(a.getSSID().equals("Livebox-A172")){
+                ret[0] = a.level;
+                return ret;
+            }
+
+        return null;*/
+        Number []ret = new Number[accessPoints.size()];
+        int i=0;
+        for(WifiAccessPoint a : accessPoints)
+            ret[i++] = a.level;
+        return ret;
+    }
+
+    public HashMap getSignalsAsHash(){
+        Number []ret = new Number[1];
+        int i=0;
+        for(WifiAccessPoint a : accessPoints)
+            if(a.getSSID().equals("Livebox-A172")){
+                values.put(counter + "-" +a.getBSSID(), a.level);
+                counter++;
+                return values;
+            }
+
+        return null;
+        /*Number []ret = new Number[accessPoints.size()];
+        int i=0;
+        for(WifiAccessPoint a : accessPoints)
+            ret[i++] = a.level;
+        return ret;*/
+    }
+ }

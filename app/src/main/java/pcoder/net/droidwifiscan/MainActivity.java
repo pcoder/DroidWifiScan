@@ -11,6 +11,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,12 +19,17 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Observable;
 import java.util.Observer;
+import java.util.SimpleTimeZone;
 
 import com.androidplot.Plot;
 import com.androidplot.util.PixelUtils;
+import com.androidplot.util.PlotStatistics;
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.PointLabelFormatter;
@@ -38,9 +44,13 @@ public class MainActivity extends ActionBarActivity {
     private WifiData wifiData;
     private XYPlot plot;
     private XYPlot dynamicPlot;
-    private MyPlotUpdater plotUpdater;
     SampleDynamicXYDatasource data;
     private Thread myThread;
+    private SimpleXYSeries wifiDataSeries = null;
+    private List allDataSeries = null;
+    private List dataList = null;
+    private List<List<ArrayList>> allDataList = null;
+
 
     public MainActivity() {
     }
@@ -50,7 +60,9 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
 
         wifiData = null;
-
+        dataList = new ArrayList();
+        allDataSeries = new ArrayList();
+        allDataList = new ArrayList<List<ArrayList>>();
         // set receiver
         WifiDataReceiver mReceiver = new WifiDataReceiver();
         LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter("DROID_WIFI_SCANNER"));
@@ -68,6 +80,26 @@ public class MainActivity extends ActionBarActivity {
 
 
         setContentView(R.layout.simple_xy_layout);
+
+        dynamicPlot = (XYPlot) findViewById(R.id.dynamicXYPlot);
+
+        wifiDataSeries = new SimpleXYSeries("Wifi Signal Strength");
+        wifiDataSeries.useImplicitXVals();
+
+        dynamicPlot.setRangeBoundaries(-100, -30, BoundaryMode.FIXED);
+        dynamicPlot.setDomainBoundaries(0, 30, BoundaryMode.FIXED);
+
+        dynamicPlot.addSeries(wifiDataSeries, new LineAndPointFormatter( Color.RED,Color.GREEN, Color.argb(255,0,0,0), null));
+        dynamicPlot.setDomainStepValue(5);
+        dynamicPlot.setTicksPerRangeLabel(3);
+        dynamicPlot.setDomainLabel("Time");
+        dynamicPlot.getDomainLabelWidget().pack();
+        dynamicPlot.setRangeLabel("Level");
+        dynamicPlot.getRangeLabelWidget().pack();
+
+        //final PlotStatistics wifiStats = new PlotStatistics(1000, true);
+        //dynamicPlot.addListener(wifiStats);
+        /*
 
         // get handles to our View defined in layout.xml:
         dynamicPlot = (XYPlot) findViewById(R.id.dynamicXYPlot);
@@ -117,6 +149,7 @@ public class MainActivity extends ActionBarActivity {
                 new float[] {PixelUtils.dpToPix(3), PixelUtils.dpToPix(3)}, 0);
         dynamicPlot.getGraphWidget().getDomainGridLinePaint().setPathEffect(dashFx);
         dynamicPlot.getGraphWidget().getRangeGridLinePaint().setPathEffect(dashFx);
+*/
 
     }
 
@@ -165,6 +198,7 @@ public class MainActivity extends ActionBarActivity {
      *
      */
     public class WifiDataReceiver extends BroadcastReceiver {
+        private static final int HISTORY_SIZE = 30;
 
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -177,24 +211,73 @@ public class MainActivity extends ActionBarActivity {
                 // and save using the REST API
                 wifiData.printAll();
 
+                // update instantaneous data:
+                Number[] series1Numbers = wifiData.getSignalsAsArray();
+
+                for(int i=0; i<series1Numbers.length; i++){
+                    ArrayList datal;
+                    SimpleXYSeries wifiDataSeriesl;
+                    if(allDataList.size() <= i ){
+                        datal = new ArrayList();
+                        datal.add(series1Numbers[i]);
+                        allDataList.add(datal);
+                        wifiDataSeriesl =  new SimpleXYSeries("" + i);
+                        wifiDataSeriesl.useImplicitXVals();
+                        dynamicPlot.addSeries(wifiDataSeriesl, new LineAndPointFormatter(Color.RED, Color.GREEN, Color.argb(0,0,0,0), null));
+                        allDataSeries.add(wifiDataSeriesl);
+                    }else{
+                        datal = (ArrayList)allDataList.get(i);
+                        datal.add(series1Numbers[i]);
+                        wifiDataSeriesl = (SimpleXYSeries)allDataSeries.get(i);
+                    }
+
+                    wifiDataSeriesl.setModel(datal, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY);
+
+                    if (datal.size() > HISTORY_SIZE) {
+                        wifiDataSeriesl.removeFirst();
+                        datal.remove(0);
+                    }
+
+                    wifiDataSeriesl.addLast(null, series1Numbers[i]);
+                }
+                dynamicPlot.redraw();
+
+
+                /*
+
+                //for (int i = 0; i<hm.size(); i++)
+                {
+                    ArrayList a = new ArrayList();
+                    a.add(series1Numbers[0]);
+                    wifiDataSeries.setModel(dataList, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY);
+
+                    wifiDataSeries = new SimpleXYSeries("" +i);
+                    wifiDataSeries.useImplicitXVals();
+                    dynamicPlot.addSeries(wifiDataSeries, new LineAndPointFormatter((int)(((i+1) * Math.random())%255), (int)(((i+1) * Math.random())%255), Color.argb(255,0,0,0), null));
+                    allDataSeries.add(wifiDataSeries);
+                }
+
+
+
+                //dataList.add(series1Numbers[0]);
+                Log.d("test", "Value = " +series1Numbers[0] );
+                dataList.add(series1Numbers[0]);
+                wifiDataSeries.setModel(dataList, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY);
+
+                // get rid the oldest sample in history:
+                if (dataList.size() > HISTORY_SIZE) {
+                    wifiDataSeries.removeFirst();
+                    dataList.remove(0);
+                }
+
+                // add the latest history sample:
+                wifiDataSeries.addLast(null, series1Numbers[0]);
+
+                // redraw the Plots:
+                dynamicPlot.redraw();*/
             }
         }
     }
-
-    // redraws a plot whenever an update is received:
-    private class MyPlotUpdater implements Observer {
-        Plot plot;
-
-        public MyPlotUpdater(Plot plot) {
-            this.plot = plot;
-        }
-
-        @Override
-        public void update(Observable o, Object arg) {
-            plot.redraw();
-        }
-    }
-
 
     @Override
     public void onResume() {
@@ -206,9 +289,23 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     public void onPause() {
-        data.stopThread();
-        super.onPause();
+        if(data != null) {
+            data.stopThread();
+            super.onPause();
+        }else{
+            Log.d("test", "There is an error.");
+        }
+
     }
+
+
+    class OurPlotData {
+        private SimpleXYSeries dataSeries;
+        private List<Number> dataList;
+
+        
+    }
+
 
     class SampleDynamicXYDatasource implements Runnable {
 

@@ -45,6 +45,14 @@ public class WifiAccessPoint implements Parcelable, Comparable<WifiAccessPoint>{
         dest.writeInt(level);
     }
 
+    public String getSSID(){
+        return SSID;
+    }
+
+    public String getBSSID(){
+        return BSSID;
+    }
+
     @Override
     public String toString() {
         return "SSID: " + SSID + " BSSID:" + BSSID + " Signal:" + level + "dBm Freq:" + frequency + "MHz Capabilities:" + capabilities;
