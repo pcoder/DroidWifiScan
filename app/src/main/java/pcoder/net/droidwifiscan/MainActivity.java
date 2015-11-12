@@ -53,6 +53,7 @@ public class MainActivity extends ActionBarActivity {
     private HashMap<String, OurPlotData> mapPlotData;
     private long startTime;
     private int xstep;
+    int color_counter = 0;
     String[] colorValues = new String[] {
             "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000",
             "800000", "008000", "000080", "808000", "800080", "008080", "808080",
@@ -259,7 +260,6 @@ public class MainActivity extends ActionBarActivity {
                 SimpleXYSeries xySeries = null;
                 List<Number> dataList = null;
                 int signalValue= 0;
-                int i = 0;
                 for(String bssid : wifiData.getAllBSSIDs()) {
 
                     signalValue = wifiData.getGetValueForBSSID(bssid);
@@ -267,22 +267,27 @@ public class MainActivity extends ActionBarActivity {
                     if ((opd = mapPlotData.get(bssid)) != null){
                         xySeries = opd.getDataSeries();
                         dataList = opd.getDataList();
+
+                        dataList.add(xstep * 5);
                         dataList.add(signalValue);
                     }else{
                         // create OurPlotData and store it for future references
                         dataList = new ArrayList();
+                        dataList.add(xstep * 5);
                         dataList.add(signalValue);
                         xySeries =  new SimpleXYSeries("t");
-                        int c = (int)Long.parseLong("FF" + colorValues[i++], 16);
+                        int c = (int)Long.parseLong("FF" + colorValues[color_counter++], 16);
                         //Log.d("test", "c = " + c);
                         dynamicPlot.addSeries(xySeries, new LineAndPointFormatter(c, c, Color.TRANSPARENT, null));
                         mapPlotData.put(bssid, new OurPlotData(xySeries, dataList));
                     }
 
-                    xySeries.setModel(dataList, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY);
-                    if (dataList.size() > HISTORY_SIZE) {
+                    xySeries.setModel(dataList, SimpleXYSeries.ArrayFormat.XY_VALS_INTERLEAVED);
+                    if (dataList.size() * 2 > HISTORY_SIZE) {
                         xySeries.removeFirst();
                         dataList.remove(0);
+                        dataList.remove(0);
+                        dynamicPlot.setDomainBoundaries(0 + xstep * 2 , 30 + xstep * 2, BoundaryMode.FIXED);
                     }
 
                     xySeries.addLast(xstep * 5, signalValue);
