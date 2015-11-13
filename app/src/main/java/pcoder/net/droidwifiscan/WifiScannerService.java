@@ -25,7 +25,6 @@ public class WifiScannerService extends Service {
     private WifiData wifiData;
 
     private int initialDelay = 500;
-    private int period = 5000;
 
     public WifiScannerService() {
 
@@ -43,7 +42,7 @@ public class WifiScannerService extends Service {
         // Create an executor service with a single thread that scans
         // and updates the access points and their signal strengths
         scheduledExecutorService = Executors.newScheduledThreadPool(1);
-        scheduledFutureAction = scheduledExecutorService.scheduleAtFixedRate(new ScanThread(), initialDelay, period,
+        scheduledFutureAction = scheduledExecutorService.scheduleAtFixedRate(new ScanThread(), initialDelay, Constants.SCAN_FREQUENCY * 1000,
                 TimeUnit.MILLISECONDS);
     }
 
@@ -71,11 +70,6 @@ public class WifiScannerService extends Service {
             if (wifiManager.isWifiEnabled()) {
                 // get the scan results of the available networks
                 List<ScanResult> scanResults = wifiManager.getScanResults();
-                /*Log.d("WifiScanThread", "Found " + scanResults.size() + " networks.");
-                int i=0;
-                for(ScanResult s : scanResults){
-                    Log.d("WifiScanThread", "     " + (++i) + ". " + s.SSID + " " + s.level + " " + s.capabilities);
-                }*/
 
                 // save the scanResults
                 wifiData.addAccessPoints(scanResults);

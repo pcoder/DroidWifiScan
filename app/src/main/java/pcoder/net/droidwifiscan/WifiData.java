@@ -29,31 +29,32 @@ import java.util.Set;
 
 public class WifiData implements Parcelable{
 
-    List<WifiAccessPoint> accessPoints;
+    //List<WifiAccessPoint> accessPoints;
     long timestamp;
     int counter;
-    HashMap<String, WifiAccessPoint> accessPointMap = new HashMap<String, WifiAccessPoint>();
+    //HashMap<String, WifiAccessPoint> accessPointMap = new HashMap<String, WifiAccessPoint>();
     HashMap<String, Integer> bssid_value_map = new HashMap<String, Integer>();
 
     public WifiData(){
-        accessPoints = new ArrayList<WifiAccessPoint>();
+        //accessPoints = new ArrayList<WifiAccessPoint>();
         counter = 0;
     }
 
     public void addAccessPoints(List<ScanResult> results) {
-        accessPoints.clear();
+        bssid_value_map.clear();
+        //accessPoints.clear();
         for (ScanResult result : results) {
-            WifiAccessPoint w = new WifiAccessPoint(result);
-            accessPoints.add(w);
-            accessPointMap.put(result.BSSID, w);
+            //WifiAccessPoint w = new WifiAccessPoint(result);
+            //accessPoints.add(w);
+            //accessPointMap.put(result.BSSID, w);
             bssid_value_map.put(result.BSSID, result.level);
         }
         timestamp = System.currentTimeMillis();
-        Collections.sort(accessPoints);
+        //Collections.sort(accessPoints);
     }
 
     public WifiData(Parcel in) {
-        in.readTypedList(accessPoints, WifiData.CREATOR);
+        //in.readTypedList(accessPoints, WifiData.CREATOR);
         timestamp = in.readLong();
 
         int size = in.readInt();
@@ -84,7 +85,7 @@ public class WifiData implements Parcelable{
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeTypedList(accessPoints);
+        //dest.writeTypedList(accessPoints);
         dest.writeLong(timestamp);
         dest.writeInt(bssid_value_map.size());
         for(Map.Entry<String,Integer> entry : bssid_value_map.entrySet()){
@@ -97,46 +98,27 @@ public class WifiData implements Parcelable{
     public String toString() {
         SimpleDateFormat sdf = new SimpleDateFormat("MMM dd,yyyy HH:mm");
         Date resultdate = new Date(timestamp);
-        return "There are " + accessPoints.size() + " access points at " + sdf.format(resultdate);
+        return "There are " + bssid_value_map.size() + " access points at " + sdf.format(resultdate);
     }
+
+    /**
+     * Uitlity function to print all access points
+     * and their characteristics.
+     */
 
     public void printAll(){
         Log.d("DroidWifiScanner", this.toString());
         int i=0;
-        for(WifiAccessPoint a : accessPoints)
-            Log.d("DroidWifiScanner", "     " + (++i) + ". " + a.toString());
+        for(String a : getAllBSSIDs())
+            Log.d("DroidWifiScanner", "     " + (++i) + ". " + bssid_value_map.get(a));
     }
 
-    public Number[] getSignalsAsArray(){
-        /*Number []ret = new Number[1];
-        int i=0;
-        for(WifiAccessPoint a : accessPoints)
-            if(a.getSSID().equals("Livebox-A172")){
-                ret[0] = a.level;
-                return ret;
-            }
-
-        return null;*/
-        Number []ret = new Number[accessPoints.size()];
-        int i=0;
-        for(WifiAccessPoint a : accessPoints)
-            ret[i++] = a.level;
-        return ret;
-    }
-
-    /*public HashMap getSignalsAsHash(){
-        Number []ret = new Number[1];
-        int i=0;
-        for(WifiAccessPoint a : accessPoints)
-            if(a.getSSID().equals("Livebox-A172")){
-                values.put(counter + "-" +a.getBSSID(), a.level);
-                counter++;
-                return values;
-            }
-
-        return null;
-
-    }*/
+    /**
+     * Returns the signal value of a given bssid
+     * @param bssid
+     * @return the value in dbm of the signal strength of the BSSID if
+     * it is found in the hashmap, else null
+     */
 
     public Integer getGetValueForBSSID(String bssid){
 
