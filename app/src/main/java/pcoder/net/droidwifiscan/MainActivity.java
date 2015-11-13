@@ -5,24 +5,39 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.PointF;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.Pair;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
+
+import com.androidplot.LineRegion;
+import com.androidplot.ui.AnchorPosition;
+import com.androidplot.ui.SizeLayoutType;
+import com.androidplot.ui.SizeMetrics;
+import com.androidplot.ui.TextOrientationType;
+import com.androidplot.ui.XLayoutStyle;
+import com.androidplot.ui.YLayoutStyle;
+import com.androidplot.ui.widget.TextLabelWidget;
+import com.androidplot.util.PixelUtils;
 import com.androidplot.xy.BoundaryMode;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
+import com.androidplot.xy.XYSeries;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -44,6 +59,9 @@ public class MainActivity extends ActionBarActivity {
             "E00000", "00E000", "0000E0", "E0E000", "E000E0", "00E0E0", "E0E0E0",
     };
 
+    private Pair<Integer, XYSeries> selection;
+
+    private TextLabelWidget selectionWidget;
 
     public MainActivity() {
     }
@@ -77,6 +95,91 @@ public class MainActivity extends ActionBarActivity {
         dynamicPlot.setRangeLabel("Level");
         dynamicPlot.getRangeLabelWidget().pack();
 
+        dynamicPlot.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View view, MotionEvent motionEvent) {
+                if(motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    onPlotClicked(new PointF(motionEvent.getX(), motionEvent.getY()));
+                }
+                return true;
+            }
+        });
+
+
+        selectionWidget = new TextLabelWidget(dynamicPlot.getLayoutManager(), Constants.NO_SELECTION_TXT,
+                new SizeMetrics(
+                        PixelUtils.dpToPix(100), SizeLayoutType.ABSOLUTE,
+                        PixelUtils.dpToPix(100), SizeLayoutType.ABSOLUTE),
+                TextOrientationType.HORIZONTAL);
+
+        selectionWidget.getLabelPaint().setTextSize(PixelUtils.dpToPix(16));
+
+        // add a dark, semi-transparent background to the selection label widget:
+        Paint p = new Paint();
+        p.setARGB(100, 0, 0, 0);
+        selectionWidget.setBackgroundPaint(p);
+
+        selectionWidget.position(
+                0, XLayoutStyle.RELATIVE_TO_CENTER,
+                PixelUtils.dpToPix(45), YLayoutStyle.ABSOLUTE_FROM_TOP,
+                AnchorPosition.TOP_MIDDLE);
+        selectionWidget.pack();
+
+    }
+
+    private void onPlotClicked(PointF point) {
+        // make sure the point lies within the graph area.  we use gridrect
+        // because it accounts for margins and padding as well. 
+        if (dynamicPlot.getGraphWidget().getGridRect().contains(point.x, point.y)) {
+            Number x = dynamicPlot.getXVal(point);
+            Number y = dynamicPlot.getYVal(point);
+
+
+            selection = null;
+            double xDistance = 0;
+            double yDistance = 0;
+
+            // find the closest value to the selection:
+            for (XYSeries series : dynamicPlot.getSeriesSet()) {
+                for (int i = 0; i < series.size(); i++) {
+                    Number thisX = series.getX(i);
+                    Number thisY = series.getY(i);
+                    if (thisX != null && thisY != null) {
+                        double thisXDistance =
+                                LineRegion.measure(x, thisX).doubleValue();
+                        double thisYDistance =
+                                LineRegion.measure(y, thisY).doubleValue();
+                        if (selection == null) {
+                            selection = new Pair<Integer, XYSeries>(i, series);
+                            xDistance = thisXDistance;
+                            yDistance = thisYDistance;
+                        } else if (thisXDistance < xDistance) {
+                            selection = new Pair<Integer, XYSeries>(i, series);
+                            xDistance = thisXDistance;
+                            yDistance = thisYDistance;
+                        } else if (thisXDistance == xDistance &&
+                                thisYDistance < yDistance &&
+                                thisY.doubleValue() >= y.doubleValue()) {
+                            selection = new Pair<Integer, XYSeries>(i, series);
+                            xDistance = thisXDistance;
+                            yDistance = thisYDistance;
+                        }
+                    }
+                }
+            }
+
+        } else {
+            // if the press was outside the graph area, deselect:
+            selection = null;
+        }
+
+        if(selection == null) {
+            selectionWidget.setText(Constants.NO_SELECTION_TXT);
+        } else {
+            selectionWidget.setText("Selected: " + selection.second.getTitle() +
+                    " Value: " + selection.second.getY(selection.first));
+        }
+        dynamicPlot.redraw();
     }
 
 
@@ -157,7 +260,7 @@ public class MainActivity extends ActionBarActivity {
                         dataList = new ArrayList();
                         dataList.add(xstep * 5);
                         dataList.add(signalValue);
-                        xySeries =  new SimpleXYSeries("t");
+                        xySeries =  new SimpleXYSeries(wifiData.getSSIDFromBSSID(bssid));
                         int c = (int)Long.parseLong("FF" + colorValues[(color_counter++)%56], 16);
                         dynamicPlot.addSeries(xySeries, new LineAndPointFormatter(c, c, Color.TRANSPARENT, null));
                         mapPlotData.put(bssid, new OurPlotData(xySeries, dataList));

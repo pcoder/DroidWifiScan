@@ -17,4 +17,7 @@ public class Constants {
      * Preferred history size is a multiple of SCAN_FREQUENCY in seconds.
      */
     public static final int HISTORY_SIZE = 90;
+
+
+    public static final String NO_SELECTION_TXT = "Please select a plot.";
 }

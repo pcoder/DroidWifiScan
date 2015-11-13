@@ -32,7 +32,7 @@ public class WifiData implements Parcelable{
     //List<WifiAccessPoint> accessPoints;
     long timestamp;
     int counter;
-    //HashMap<String, WifiAccessPoint> accessPointMap = new HashMap<String, WifiAccessPoint>();
+    HashMap<String, WifiAccessPoint> accessPointMap = new HashMap<String, WifiAccessPoint>();
     HashMap<String, Integer> bssid_value_map = new HashMap<String, Integer>();
 
     public WifiData(){
@@ -44,9 +44,9 @@ public class WifiData implements Parcelable{
         bssid_value_map.clear();
         //accessPoints.clear();
         for (ScanResult result : results) {
-            //WifiAccessPoint w = new WifiAccessPoint(result);
+            WifiAccessPoint w = new WifiAccessPoint(result);
             //accessPoints.add(w);
-            //accessPointMap.put(result.BSSID, w);
+            accessPointMap.put(result.BSSID, w);
             bssid_value_map.put(result.BSSID, result.level);
         }
         timestamp = System.currentTimeMillis();
@@ -102,7 +102,7 @@ public class WifiData implements Parcelable{
     }
 
     /**
-     * Uitlity function to print all access points
+     * Utility function to print all access points
      * and their characteristics.
      */
 
@@ -127,5 +127,18 @@ public class WifiData implements Parcelable{
 
     public Set<String> getAllBSSIDs(){
        return bssid_value_map.keySet();
+    }
+
+    /**
+     * Function to obtain the SSID from a given BSSID
+     * @param bssid
+     */
+
+    public String getSSIDFromBSSID(String bssid){
+        WifiAccessPoint w = (WifiAccessPoint)accessPointMap.get(bssid);
+        if(w== null){
+            return "";
+        }
+        return w.getSSID();
     }
  }
