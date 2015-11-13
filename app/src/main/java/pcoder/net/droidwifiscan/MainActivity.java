@@ -7,6 +7,7 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
+import android.graphics.RectF;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
@@ -21,13 +22,16 @@ import android.view.View;
 import android.view.ViewGroup;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import com.androidplot.LineRegion;
 import com.androidplot.ui.AnchorPosition;
+import com.androidplot.ui.DynamicTableModel;
 import com.androidplot.ui.SizeLayoutType;
 import com.androidplot.ui.SizeMetrics;
+import com.androidplot.ui.TableModel;
 import com.androidplot.ui.TextOrientationType;
 import com.androidplot.ui.XLayoutStyle;
 import com.androidplot.ui.YLayoutStyle;
@@ -176,8 +180,14 @@ public class MainActivity extends ActionBarActivity {
         if(selection == null) {
             selectionWidget.setText(Constants.NO_SELECTION_TXT);
         } else {
-            selectionWidget.setText("Selected: " + selection.second.getTitle() +
-                    " Value: " + selection.second.getY(selection.first));
+            selectionWidget.setText(selection.second.getTitle() +
+                    " : " + selection.second.getY(selection.first));
+            DynamicTableModel model = new DynamicTableModel(5, 5);
+            RectF tableRect = new RectF(0, 0, 1000, 2000);
+            RectF cellRect = model.getCellRect(tableRect, 10);
+            //assertEquals(200f, cellRect.width());
+            //dynamicPlot.getLegendWidget().setTableModel();
+            //dynamicPlot.getLegendWidget()
         }
         dynamicPlot.redraw();
     }
@@ -236,7 +246,7 @@ public class MainActivity extends ActionBarActivity {
             if (data != null) {
                 wifiData = data;
 
-                // TODO use this data to plot the graph
+                // Use this data to plot the graph
                 // and save using the REST API
 
                 OurPlotData opd = null;
