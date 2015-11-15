@@ -2,4 +2,5 @@
     <string name="app_name">DroidWifiScan</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="dialog_text">Error connecting to connect to the server. The AP details will not be saved on the server. They will be saved locally. Your APP key will be verified when the server is available.</string>
 </resources>
