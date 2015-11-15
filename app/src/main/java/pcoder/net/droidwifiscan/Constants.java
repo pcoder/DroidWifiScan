@@ -21,5 +21,18 @@ public class Constants {
 
     public static final String NO_SELECTION_TXT = "Please select a plot.";
 
-    public static final String POST_URL = "http://192.168.0.11:8080/signals/bob";
+    public static String POST_URL = "http://192.168.0.11:8080/signals/bob";
+
+    public static final String SERVER_URL_KEY = "pcoder.net.droidwifiscan.server_url";
+
+    public static final String APP_KEY_KEY = "pcoder.net.droidwifiscan.app_key";
+
+    public static final String DEFAULT_NS = "pcoder.net.droidwifiscan";
+
+    /**
+     * Do not allow more than MAX_FILES to be saved on the device
+     */
+    public static final int MAX_FILES = 500;
+
+
 }
