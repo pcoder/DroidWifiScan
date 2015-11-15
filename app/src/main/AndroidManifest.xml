@@ -3,11 +3,14 @@
     package="pcoder.net.droidwifiscan" >
 
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.INTERNET"></uses-permission>
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name" >
@@ -20,6 +23,11 @@
 
         <service
             android:name=".WifiScannerService"
+            android:enabled="true"
+            android:exported="true" >
+        </service>
+        <service
+            android:name=".RestfulPOSTService"
             android:enabled="true"
             android:exported="true" >
         </service>

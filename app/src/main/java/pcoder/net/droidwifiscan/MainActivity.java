@@ -8,6 +8,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.os.AsyncTask;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v4.app.Fragment;
@@ -20,6 +21,12 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Toast;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -43,6 +50,18 @@ import com.androidplot.xy.SimpleXYSeries;
 import com.androidplot.xy.XYPlot;
 import com.androidplot.xy.XYSeries;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 
 public class MainActivity extends ActionBarActivity {
 
@@ -52,6 +71,7 @@ public class MainActivity extends ActionBarActivity {
     private int xstep;
     int color_counter = 0;
     int startx = 0;
+    WifiDataReceiver mReceiver = null;
     String[] colorValues = new String[] {
             "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000",
             "800000", "008000", "000080", "808000", "800080", "008080", "808080",
@@ -67,6 +87,12 @@ public class MainActivity extends ActionBarActivity {
 
     private TextLabelWidget selectionWidget;
 
+    private DataAdapter da;
+
+    private Intent scannerServiceIntent;
+
+    private Intent postServiceIntent;
+
     public MainActivity() {
     }
 
@@ -76,14 +102,12 @@ public class MainActivity extends ActionBarActivity {
         xstep = 0;
         wifiData = null;
         mapPlotData = new HashMap<String, OurPlotData>();
-        // set receiver
-        WifiDataReceiver mReceiver = new WifiDataReceiver();
-        LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter("DROID_WIFI_SCANNER"));
-
         // start the WifiScannerService
-        Intent intent = new Intent(this, WifiScannerService.class);
-        startService(intent);
+        scannerServiceIntent = new Intent(this, WifiScannerService.class);
+        startService(scannerServiceIntent);
 
+        postServiceIntent = new Intent(this, RestfulPOSTService.class);
+        startService(postServiceIntent);
 
         setContentView(R.layout.simple_xy_layout);
 
@@ -128,6 +152,18 @@ public class MainActivity extends ActionBarActivity {
                 PixelUtils.dpToPix(45), YLayoutStyle.ABSOLUTE_FROM_TOP,
                 AnchorPosition.TOP_MIDDLE);
         selectionWidget.pack();
+
+        // set receiver
+        if(mReceiver == null) {
+            mReceiver = new WifiDataReceiver();
+            LocalBroadcastManager.getInstance(this).registerReceiver(mReceiver, new IntentFilter("DROID_WIFI_SCANNER"));
+        }
+
+        // initialize the data adapter
+        da = new DataAdapter(getApplicationContext());
+
+        //POSTThread pp = new POSTThread();
+        //pp.run();
 
     }
 
@@ -255,9 +291,21 @@ public class MainActivity extends ActionBarActivity {
                 int signalValue= 0;
                 Set<String> allBSSIDS = wifiData.getAllBSSIDs();
                 dynamicPlot.setTitle("Wifi Signal Plot (" + allBSSIDS.size() + " aps)");
+                JSONObject ap = null;
+                JSONArray jsonArray = new JSONArray();
+                String ssid = "";
                 for(String bssid : allBSSIDS) {
-
+                    ap = new JSONObject();
                     signalValue = wifiData.getGetValueForBSSID(bssid);
+                    ssid = wifiData.getSSIDFromBSSID(bssid);
+                    // store the essentials in a JSONObject
+                    try {
+                        ap.put("BSSID", bssid);
+                        ap.put("SSID", ssid);
+                        ap.put("signal", signalValue);
+                    }catch(JSONException ex){
+                        Log.e("MainActivity", ex.getMessage());
+                    }
 
                     if ((opd = mapPlotData.get(bssid)) != null){
                         xySeries = opd.getDataSeries();
@@ -270,7 +318,7 @@ public class MainActivity extends ActionBarActivity {
                         dataList = new ArrayList();
                         dataList.add(xstep * 5);
                         dataList.add(signalValue);
-                        xySeries =  new SimpleXYSeries(wifiData.getSSIDFromBSSID(bssid));
+                        xySeries =  new SimpleXYSeries(ssid);
                         int c = (int)Long.parseLong("FF" + colorValues[(color_counter++)%56], 16);
                         dynamicPlot.addSeries(xySeries, new LineAndPointFormatter(c, c, Color.TRANSPARENT, null));
                         mapPlotData.put(bssid, new OurPlotData(xySeries, dataList));
@@ -278,13 +326,35 @@ public class MainActivity extends ActionBarActivity {
 
                     xySeries.setModel(dataList, SimpleXYSeries.ArrayFormat.XY_VALS_INTERLEAVED);
                     if (dataList.size() * 2 > Constants.HISTORY_SIZE) {
+
+                        // We are beyond the size of window that is displayed
+                        // Hence, we slide the window one time step forward
+                        // and ignore the last available data of the series
+
                         xySeries.removeFirst();
+                        // we need to remove a pair of elements
+                        // so remove twice
                         dataList.remove(0);
                         dataList.remove(0);
                     }
 
                     xySeries.addLast(xstep * 5, signalValue);
+
+                    // store the JSONObject in an array
+                    jsonArray.put(ap);
                 }
+
+                // save the JSONArray to a file
+                JSONObject objWithTime = new JSONObject();
+                try {
+                    objWithTime.put("timestamp", wifiData.getTimeStamp());
+                    objWithTime.put("data", jsonArray);
+                }catch(JSONException ex){
+                    ex.printStackTrace();
+                }
+                if(da != null)
+                  da.save(objWithTime);
+
                 if((xstep * 5) >= Constants.HISTORY_SIZE){
                     startx+=5;
                     dynamicPlot.setDomainBoundaries(startx, Constants.HISTORY_SIZE + startx, BoundaryMode.FIXED);
@@ -309,13 +379,17 @@ public class MainActivity extends ActionBarActivity {
     protected void onStop() {
         Log.d("test", "App stopped");
         super.onStop();
+        stopService(scannerServiceIntent);
+        stopService(postServiceIntent);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
     }
 
     @Override
     protected void onDestroy() {
         Log.d("test", "App destoryed");
-
         super.onDestroy();
+        stopService(scannerServiceIntent);
+        stopService(postServiceIntent);
     }
 
 

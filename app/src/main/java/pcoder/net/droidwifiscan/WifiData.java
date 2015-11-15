@@ -65,6 +65,10 @@ public class WifiData implements Parcelable{
         }
     }
 
+    public long getTimeStamp(){
+        return timestamp;
+    }
+
     public static final Parcelable.Creator<WifiAccessPoint> CREATOR = new Parcelable.Creator<WifiAccessPoint>() {
         public WifiAccessPoint createFromParcel(Parcel in) {
             return new WifiAccessPoint(in);

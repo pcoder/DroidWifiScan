@@ -20,4 +20,6 @@ public class Constants {
 
 
     public static final String NO_SELECTION_TXT = "Please select a plot.";
+
+    public static final String POST_URL = "http://192.168.0.11:8080/signals/bob";
 }
