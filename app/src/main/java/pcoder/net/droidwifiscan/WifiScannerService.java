@@ -13,17 +13,34 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class WifiScannerService extends Service {
 
+    /**
+     * instance of the android WifiManager class for access to scan results
+     */
     private WifiManager wifiManager;
-    private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
+
+    /**
+     * A variable to schedule the future scanning tasks
+     */
     private ScheduledFuture<?> scheduledFutureAction;
+
+    /**
+     * The executor service that schedules the future tasks
+     */
     private ScheduledExecutorService scheduledExecutorService;
+
+    /**
+     * The variable that is filled with the scan results. This is sent
+     * to the activities that listen to this service.
+     */
     private WifiData wifiData;
 
+    /**
+     * Initial delay before starting the scan service
+     */
     private int initialDelay = 500;
 
     public WifiScannerService() {

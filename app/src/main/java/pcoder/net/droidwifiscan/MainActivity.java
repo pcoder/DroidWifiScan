@@ -48,13 +48,46 @@ import org.json.JSONObject;
 
 public class MainActivity extends ActionBarActivity {
 
+    /**
+     * This variable holds the information broadcasted by the Scan Service
+     */
     private WifiData wifiData;
+
+    /**
+     * The android plot variable to manipulate the graph
+     */
     private XYPlot dynamicPlot;
+
+    /**
+     * A BSSID to PlotData HashMap.
+     *
+     * The access points are uniquely identified by BSSIDs.
+     */
     private HashMap<String, OurPlotData> mapPlotData;
+
+    /**
+     * Variable to hold the number of steps taken in x-direction (time)
+     */
     private int xstep;
+
+    /**
+     * A counter variable to monitor the colors of various plots
+     */
     int color_counter = 0;
+
+    /**
+     * Variable used for sliding the window of interest
+     */
     int startx = 0;
+
+    /**
+     * The broadcast receiver for the scan results
+     */
     WifiDataReceiver mReceiver = null;
+
+    /**
+     * Hex values of some jolly colors.
+     */
     String[] colorValues = new String[] {
             "FF0000", "00FF00", "0000FF", "FFFF00", "FF00FF", "00FFFF", "000000",
             "800000", "008000", "000080", "808000", "800080", "008080", "808080",
@@ -66,13 +99,33 @@ public class MainActivity extends ActionBarActivity {
             "E00000", "00E000", "0000E0", "E0E000", "E000E0", "00E0E0", "E0E0E0",
     };
 
+    /**
+     * A variable to store the current selection
+     */
+
     private Pair<Integer, XYSeries> selection;
+
+    /**
+     * It holds the selection information
+     */
 
     private TextLabelWidget selectionWidget;
 
+
+    /**
+     * The data persistence variable
+     */
     private DataAdapter da;
 
+    /**
+     * scannerService intent
+     */
+
     private Intent scannerServiceIntent;
+
+    /**
+     * postservice intent
+     */
 
     private Intent postServiceIntent;
 
@@ -86,10 +139,12 @@ public class MainActivity extends ActionBarActivity {
         xstep = 0;
         wifiData = null;
         mapPlotData = new HashMap<String, OurPlotData>();
+
         // start the WifiScannerService
         scannerServiceIntent = new Intent(this, WifiScannerService.class);
         startService(scannerServiceIntent);
 
+        // start the RestfulPOSTService
         postServiceIntent = new Intent(this, RestfulPOSTService.class);
         startService(postServiceIntent);
 
@@ -146,9 +201,6 @@ public class MainActivity extends ActionBarActivity {
         // initialize the data adapter
         da = new DataAdapter(getApplicationContext());
 
-        //POSTThread pp = new POSTThread();
-        //pp.run();
-
     }
 
     private void onPlotClicked(PointF point) {
@@ -202,12 +254,12 @@ public class MainActivity extends ActionBarActivity {
         } else {
             selectionWidget.setText(selection.second.getTitle() +
                     " : " + selection.second.getY(selection.first));
-            DynamicTableModel model = new DynamicTableModel(5, 5);
-            RectF tableRect = new RectF(0, 0, 1000, 2000);
-            RectF cellRect = model.getCellRect(tableRect, 10);
-            //assertEquals(200f, cellRect.width());
-            //dynamicPlot.getLegendWidget().setTableModel();
-            //dynamicPlot.getLegendWidget()
+
+            // TODO change the legend according to the selected plot
+            //DynamicTableModel model = new DynamicTableModel(5, 5);
+            //RectF tableRect = new RectF(0, 0, 1000, 2000);
+            //RectF cellRect = model.getCellRect(tableRect, 10);
+
         }
         dynamicPlot.redraw();
     }
@@ -376,6 +428,10 @@ public class MainActivity extends ActionBarActivity {
         stopService(postServiceIntent);
     }
 
+    /**
+     * A class to hold the PlotData
+     * It includes a SimpleXYSeries and an arrayList of Number.
+     */
 
     class OurPlotData {
         private SimpleXYSeries dataSeries;

@@ -6,6 +6,9 @@ import android.os.Parcelable;
 
 /**
  * Created by pcoder on 11/10/15.
+ *
+ * A class that stores all the information about a Wifi Access Point obtained from
+ * the scan.
  */
 public class WifiAccessPoint implements Parcelable, Comparable<WifiAccessPoint>{
     private String BSSID;

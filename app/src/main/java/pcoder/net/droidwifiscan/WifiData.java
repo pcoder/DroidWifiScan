@@ -29,32 +29,43 @@ import java.util.Set;
 
 public class WifiData implements Parcelable{
 
-    //List<WifiAccessPoint> accessPoints;
+    /**
+     * The timestamp when all the data of the APs were obtained
+     */
     long timestamp;
-    int counter;
+
+    /**
+     * A BSSID - WifiAccessPoint HashMap : to obtain data of an AP based on its BSSID
+     * as and when required
+     */
     HashMap<String, WifiAccessPoint> accessPointMap = new HashMap<String, WifiAccessPoint>();
+
+    /**
+     * For this project, we are only concerned with BSSID - signal strength
+     */
     HashMap<String, Integer> bssid_value_map = new HashMap<String, Integer>();
 
     public WifiData(){
-        //accessPoints = new ArrayList<WifiAccessPoint>();
-        counter = 0;
     }
 
+    /**
+     * This function is called whenever new scan results are available
+     * @param results The scan results
+     */
+
     public void addAccessPoints(List<ScanResult> results) {
+
+        // We clear the bssid_value_map and refill it with the fresh results
         bssid_value_map.clear();
-        //accessPoints.clear();
         for (ScanResult result : results) {
             WifiAccessPoint w = new WifiAccessPoint(result);
-            //accessPoints.add(w);
             accessPointMap.put(result.BSSID, w);
             bssid_value_map.put(result.BSSID, result.level);
         }
         timestamp = System.currentTimeMillis();
-        //Collections.sort(accessPoints);
     }
 
     public WifiData(Parcel in) {
-        //in.readTypedList(accessPoints, WifiData.CREATOR);
         timestamp = in.readLong();
 
         int size = in.readInt();
@@ -128,6 +139,11 @@ public class WifiData implements Parcelable{
 
         return bssid_value_map.get(bssid);
     }
+
+    /**
+     * Function to obtain all BSSIDs found in the current timestamp
+     * @return Set of strings representing the BSSIDs
+     */
 
     public Set<String> getAllBSSIDs(){
        return bssid_value_map.keySet();
