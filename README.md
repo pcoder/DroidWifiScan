@@ -1,5 +1,9 @@
 # DroidWifiScan
+
 This is a project to scan all the wifi access points and present the evolution of their signal strength over time them in a graphical way. A web.py based REST server ([see rest_server](https://github.com/pcoder/DroidWifiScan/tree/master/rest_server)) that allows storing the access point (AP) details on a server using the REST API. In the absense of this server, the scanned AP details are stored on the device. They are uploaded once the server is reachable.
+
+####[Download apk here.](https://github.com/pcoder/DroidWifiScan/blob/master/apks/app-release.apk?raw=true)
+
 
 ![Screenshot](https://raw.githubusercontent.com/pcoder/DroidWifiScan/master/screenshots/Screenshot_2015-11-16-00-16-13.png "Screenshot of the app")
 
