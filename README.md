@@ -33,5 +33,9 @@ The start screen of the app prompts a screen as shown in the screenshot below. I
 1. Currently, the evolution of the WIFI signals of various APs are stored in the internal storage of the android device. Need to extend this to store them on the external storage if available.
 2. A settings activity, where various settings that are currently stored in [Constants.java](https://github.com/pcoder/DroidWifiScan/blob/master/app/src/main/java/pcoder/net/droidwifiscan/Constants.java) can be edited and persisted.
 3. Write mockup Test cases.
+4. Update UI
+  1. Too many access points makes the graph clutter.
+  2. Show corresponding legend of a graph on selection
+  3. Highlight the graph that is currently selected
 
 
