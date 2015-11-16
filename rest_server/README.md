@@ -7,6 +7,8 @@ This is a simple python web.py based REST Server that accepts POST requests from
 2. `/signals/(application_key)` Request with the POST body containing the JSON of the signals of various access_points. For this request, the script simply appends the contents of the JSON to a text file with the name `(application_key)_signals`.
 
 
+### Dependencies
+
 The web server is based on web.py framework. Hence, the requirements for running this script are:
 
 - A python environment (Tested on Python 2.7.3)
