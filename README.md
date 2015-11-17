@@ -41,5 +41,7 @@ The start screen of the app prompts a screen as shown in the screenshot below. I
   1. Too many access points makes the graph clutter.
   2. Show corresponding legend of a graph on selection
   3. Highlight the graph that is currently selected
+5. To test on different versions of android and on different devices.
+
 
 
